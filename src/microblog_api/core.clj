@@ -12,18 +12,16 @@
 (defn gen-post-id []
   (swap! last-id inc))
 
-(defn save-post [post]
-  (swap! storage (fn [storage]
+(defn create-post [user text]
+  (let [post {:id (gen-post-id)  :current-time (System/currentTimeMillis) :user user :text text}
+        save-post (fn [post]
+                  (swap! storage (fn [storage]
                    (->
                      storage
                      (update-in [:id-index] assoc (:id post) post)
                      (update-in [:time-index] conj post)
                    )))
-  post
-  )
-
-(defn create-post [user text]
-  (let [post {:id (gen-post-id)  :current-time (System/currentTimeMillis) :user user :text text}]
+                  post)]
     (save-post post)))
 
 (defn get-post [post-id]
@@ -53,12 +51,20 @@
 ;  :headers {}})
 
 (defn handler [req]
-  (if (and (= (req :request-method) :post)
+  (cond
+    (and (= (req :request-method) :post)
            (= (req :uri) "/posts"))
     {:status 200
     :body (pr-str 
       (create-post "marc" (get-in req [:params :text])))
     :headers {}}
+    (and (= (req :request-method) :get)
+           (= (req :uri) "/posts"))
+    {:status 200
+    :body (pr-str 
+      (timeline 0 10 ))
+    :headers {}}
+    :else 
   {:status 404 :body "not found" :headers {}}))
 
 (def app
