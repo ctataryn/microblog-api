@@ -1,5 +1,7 @@
 (ns microblog-api.core
-(:use ring.adapter.jetty))
+(:use ring.adapter.jetty
+      ring.middleware.params
+      ring.middleware.keyword-params))
 ;(use 'microblog-api.core :reload-all)
 ;
 ;persitence code
@@ -21,9 +23,8 @@
   )
 
 (defn create-post [user text]
-  (let [post {:post-id (gen-post-id)  :current-time (System/currentTimeMillis) :user user :text text}]
-    (save-post post))
-)
+  (let [post {:id (gen-post-id)  :current-time (System/currentTimeMillis) :user user :text text}]
+    (save-post post)))
 
 (defn get-post [post-id]
   (get-in @storage [:id-index post-id])
@@ -46,10 +47,24 @@
 ;(timeline 0 1)
 
 ;web code
-(defn app [req] 
-  {:status 200
-   :body "Hello, World!"
-   :headers {}})
+;(defn app [req] 
+;  {:status 200
+;  :body (pr-str req)
+;  :headers {}})
+
+(defn handler [req]
+  (if (and (= (req :request-method) :post)
+           (= (req :uri) "/posts"))
+    {:status 200
+    :body (pr-str 
+      (create-post "marc" (get-in req [:params :text])))
+    :headers {}}
+  {:status 404 :body "not found" :headers {}}))
+
+(def app
+  (-> handler
+    wrap-keyword-params
+    wrap-params))
 
 (defn start [] 
   (run-jetty app {:port 8080 
