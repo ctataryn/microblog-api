@@ -1,6 +1,8 @@
-(ns microblog-api.core)
+(ns microblog-api.core
+(:use ring.adapter.jetty))
 ;(use 'microblog-api.core :reload-all)
-
+;
+;persitence code
 (def last-id (atom 0))
 
 (def storage (atom {}))
@@ -42,3 +44,13 @@
 
 ;(get-post 3)
 ;(timeline 0 1)
+
+;web code
+(defn app [req] 
+  {:status 200
+   :body "Hello, World!"
+   :headers {}})
+
+(defn start [] 
+  (run-jetty app {:port 8080 
+                  :join? false}))
